@@ -1,44 +1,47 @@
-# streamlit_app/app.py
 import streamlit as st
 import requests
+import json
+import os
 
-st.set_page_config(page_title="Plagiarism Checker", layout="wide")
-st.title("📄 Plagiarism Checker (Streamlit UI)")
+API_URL = os.getenv("API_URL", "http://flask:5000/check")
 
-st.markdown("Upload original and submission text files. This frontend posts to the Flask API at http://localhost:5000/check")
+st.title("🧠 Plagiarism Checker using Cosine Similarity")
+
+st.markdown("Upload two text files below to check for plagiarism similarity.")
 
 col1, col2 = st.columns(2)
+
 with col1:
-    original_file = st.file_uploader("Upload Original File", type=["txt"], key="orig")
+    original_file = st.file_uploader("Upload Original File", type=["txt"])
+
 with col2:
-    submission_file = st.file_uploader("Upload Submission File", type=["txt"], key="sub")
+    submission_file = st.file_uploader("Upload Submission File", type=["txt"])
 
 if st.button("Check Plagiarism"):
-    if not original_file or not submission_file:
-        st.error("Please upload both files.")
-    else:
-        with st.spinner("Checking..."):
-            files = {
-                "original": original_file,
-                "submission": submission_file
-            }
+    if original_file and submission_file:
+        files = {
+            "original": original_file,
+            "submission": submission_file,
+        }
+
+        with st.spinner("Analyzing..."):
             try:
-                resp = requests.post("http://localhost:5000/check", files=files, timeout=10)
-                if resp.status_code != 200:
-                    st.error(f"API error: {resp.status_code} - {resp.text}")
+                response = requests.post(API_URL, files=files)
+                if response.status_code == 200:
+                    result = response.json()
+                    st.success(f"✅ Similarity Score: {result['similarity_score']:.3f}")
+                    st.info(f"📊 Probability: {result['probability']:.3f}")
+                    st.write("**Plagiarized:**", "Yes" if result["plagiarized"] else "No")
+
+                    with st.expander("🔍 Highlighted Original Text"):
+                        st.markdown(result["highlighted_original"], unsafe_allow_html=True)
+
+                    with st.expander("🔍 Highlighted Submission Text"):
+                        st.markdown(result["highlighted_submission"], unsafe_allow_html=True)
                 else:
-                    data = resp.json()
-                    st.metric("Similarity Score", f"{data['similarity_score']*100:.2f}%")
-                    st.metric("Plagiarism Probability", f"{data['probability']*100:.2f}%")
-                    if data["plagiarized"]:
-                        st.error("🔴 Likely plagiarized")
-                    else:
-                        st.success("🟢 Looks original")
-
-                    st.subheader("Highlighted Original")
-                    st.markdown(data["highlighted_original"], unsafe_allow_html=True)
-
-                    st.subheader("Highlighted Submission")
-                    st.markdown(data["highlighted_submission"], unsafe_allow_html=True)
+                    st.error(f"Server returned error: {response.status_code}")
+                    st.json(response.json())
             except Exception as e:
-                st.error(f"Connection failed: {e}")
+                st.error(f"Request failed: {e}")
+    else:
+        st.warning("Please upload both files before checking.")
