@@ -1,0 +1,3 @@
+The quick brown fox jumps over the lazy dog.
+Neural networks are powerful tools for many tasks.
+I went to the market to buy apples.
