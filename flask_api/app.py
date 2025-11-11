@@ -5,7 +5,8 @@ import joblib
 import os
 
 app = Flask(__name__)
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "plagiarism_model.pkl")
+MODEL_PATH = MODEL_PATH = "flask_api/plagiarism_model.pkl"
+
 model = joblib.load(MODEL_PATH)
 
 @app.route("/check", methods=["POST"])
@@ -35,4 +36,5 @@ def check():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
+

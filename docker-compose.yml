@@ -1,0 +1,22 @@
+services:
+  flask:
+    build:
+      context: .
+      dockerfile: flask_api/Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./flask_api:/app/flask_api
+    environment:
+      - FLASK_ENV=development
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: streamlit_app/Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      - flask
+    volumes:
+      - ./streamlit_app:/app
